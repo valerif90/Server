@@ -1,48 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const { update } = require('../models/message');
 
-const User = require('../models/user');
+const Message = require('../models/message');
 
-router.get('/',  (req, res, next) => {
-    
-        //   const page = req.query.page;
-        //   const limit = req.query.limit;
-        //   const startIndex = (page - 1) * limit;
-        //   const endIndex = page * limit;
-        //   const result = users.slice(startIndex, endIndex);
-        //   res.json(result);
-      
-         
-
-
-   User.find()
-       .select('id followed likesCount fullName photoUrl age country city info')
+router.get('/', (req, res, next) => {
+    Message.find()
+       .select('messageText id created')
        .exec()
        .then(docs => {
-     const users = {
+     const response = {
          count: docs.length,
-         users: docs.map(doc => {
+         messages: docs.map(doc => {
              return {
+                messageText: doc.messageText,                
                 _id: doc._id,
-                followed: doc.followed,
-                likesCount: doc.likesCount,
-                fullName: doc.fullName,
-                photoUrl: doc.photoUrl,
-                age: doc.age,
-                country: doc.country,
-                city: doc.city,
-                info: doc.info
+                created: doc.created
              }
          })
      };
-           //if (docs.length >= 0) {
-               res.status(200).json(users);
-           // } else {
-           //     res.status(404).json({
-           //        message: 'No entries found'
-           //     });
-           // }
+     res.status(200).json(response);
        })
        .catch(err => {
            console.log(err);
@@ -52,25 +30,20 @@ router.get('/',  (req, res, next) => {
        });
 });
 
+
+
 router.post('/', (req, res, next) => {
-    const user = new User({
+    const message = new Message({
         _id: new mongoose.Types.ObjectId(),
-        followed: req.body.followed,
-        likesCount: req.body.likesCount,
-        fullName: req.body.fullName,
-        photoUrl: req.body.photoUrl,
-        age: req.body.age,
-        country: req.body.country,
-        city: req.body.city,
-        info: req.body.info
+        messageText: req.body.messageText,
+        created: (new Date()).toLocaleString('en-US', { timeZone: 'Europe/Moscow' })
     });
-    user
-        .save()
+    message.save()
         .then(result => {
         console.log(result);
             res.status(201).json({
-                message: 'User created',
-                createdUser: result
+                message: 'Message created',
+                createdMessage: result
             });
     })
         .catch(err => {
@@ -81,9 +54,9 @@ router.post('/', (req, res, next) => {
         });
 });
 
-router.get('/:userId', (req, res, next) => {
-   const _id = req.params.userId;
-   User.findById(_id)
+router.get('/:messageId', (req, res, next) => {
+   const _id = req.params.messageId;
+   Message.findById(_id)
        .exec()
        .then(doc => {
            console.log('From database', doc);
@@ -99,13 +72,13 @@ router.get('/:userId', (req, res, next) => {
        });
    });
 
-router.patch('/:userId', (req, res, next) => {
-    const _id = req.params.userId;
+router.patch('/:messageId', (req, res, next) => {
+    const _id = req.params.messageId;
     const updateOps = {};
     for (const ops of req.body) {
         updateOps[ops.propName] = ops.value;
     }
-    User.update({_id: _id}, { $set: updateOps })
+    Message.update({_id: _id}, { $set: updateOps })
         .exec()
         .then(result => {
             console.log(result);
@@ -119,9 +92,9 @@ router.patch('/:userId', (req, res, next) => {
         });
 });
 
-router.delete('/:userId', (req, res, next) => {
-    const _id = req.params.userId;
-    User.remove({_id: _id})
+router.delete('/:messageId', (req, res, next) => {
+    const _id = req.params.messageId;
+    Message.remove({_id: _id})
         .exec()
         .then(result => {
             res.status(200).json(result);
